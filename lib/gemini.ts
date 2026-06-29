@@ -3,7 +3,7 @@ import * as FileSystem from "expo-file-system/legacy";
 const GEMINI_KEY = process.env.EXPO_PUBLIC_GEMINI_KEY;
 
 const GEMINI_URL =
-  `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`;
+  `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`;
 
 export async function imageToBase64(uri: string) {
   return await FileSystem.readAsStringAsync(uri, {
