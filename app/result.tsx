@@ -1,67 +1,80 @@
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
-import { ScrollView, Text, View, StyleSheet, ActivityIndicator } from "react-native";
+import {
+  ScrollView,
+  Text,
+  View,
+  StyleSheet,
+  ActivityIndicator,
+} from "react-native";
+import { analyzeImage, PROMPTS } from "../lib/gemini";
 
 export default function ResultScreen() {
-  const { result } = useLocalSearchParams<{ result: string }>();
+  const { base64Image, promptKey } =
+    useLocalSearchParams<{ base64Image: string; promptKey: keyof typeof PROMPTS }>();
 
   const [loading, setLoading] = useState(true);
   const [parsed, setParsed] = useState<any>(null);
 
   useEffect(() => {
-    try {
-      if (typeof result === "string") {
-        const cleaned = result
+    async function run() {
+      try {
+        const prompt = PROMPTS[promptKey];
+
+        const response = await analyzeImage(base64Image, prompt);
+
+        const text =
+          response?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+        if (!text) throw new Error("Empty response");
+
+        const cleaned = text
           .replace(/```json/g, "")
           .replace(/```/g, "")
           .replace(/`/g, "")
           .trim();
 
-        const json = JSON.parse(cleaned);
-        setParsed(json);
+        setParsed(JSON.parse(cleaned));
+      } catch (err) {
+        console.log("Parse/Analyze error:", err);
+      } finally {
+        setLoading(false);
       }
-    } catch (e) {
-      console.log("Parse error:", e);
-    } finally {
-      setLoading(false);
     }
+
+    run();
   }, []);
 
-  // 🔥 LOADING STATE (Phase 5 requirement)
   if (loading) {
     return (
       <View style={styles.center}>
         <ActivityIndicator size="large" color="#2E5BBA" />
-        <Text style={styles.loadingText}>Analyzing image...</Text>
+        <Text>Analyzing...</Text>
       </View>
     );
   }
 
   return (
     <ScrollView style={styles.container}>
-      <Text style={styles.title}>AI Result</Text>
+      <Text style={styles.title}>Result ({promptKey})</Text>
 
       <View style={styles.box}>
-        <Text style={styles.label}>Objects:</Text>
-        <Text>
-          {Array.isArray(parsed?.objects)
-            ? parsed.objects.join(", ")
-            : "N/A"}
-        </Text>
+        <Text style={styles.label}>Objects</Text>
+        <Text>{parsed?.objects?.join(", ") || "N/A"}</Text>
       </View>
 
       <View style={styles.box}>
-        <Text style={styles.label}>Context:</Text>
+        <Text style={styles.label}>Context</Text>
         <Text>{parsed?.context || "N/A"}</Text>
       </View>
 
       <View style={styles.box}>
-        <Text style={styles.label}>Activities:</Text>
+        <Text style={styles.label}>Activities</Text>
         <Text>{parsed?.activities || "N/A"}</Text>
       </View>
 
       <View style={styles.box}>
-        <Text style={styles.label}>Recommendations:</Text>
+        <Text style={styles.label}>Recommendations</Text>
         <Text>{parsed?.recommendations || "N/A"}</Text>
       </View>
     </ScrollView>
@@ -70,20 +83,8 @@ export default function ResultScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 20 },
-
-  center: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
-  loadingText: {
-    marginTop: 10,
-    fontSize: 16,
-    color: "#555",
-  },
-
+  center: { flex: 1, justifyContent: "center", alignItems: "center" },
   title: { fontSize: 22, fontWeight: "bold", marginBottom: 20 },
   box: { marginBottom: 15 },
-  label: { fontWeight: "bold", marginBottom: 5 },
+  label: { fontWeight: "bold" },
 });

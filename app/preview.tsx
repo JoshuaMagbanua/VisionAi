@@ -1,6 +1,6 @@
 import { View, Image, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
-import { imageToBase64, analyzeImage, ANALYSIS_PROMPT } from "../lib/gemini";
+import { imageToBase64, analyzeImage, PROMPTS } from "../lib/gemini";
 
 export default function PreviewScreen() {
   const { photoUri } = useLocalSearchParams<{ photoUri: string }>();
@@ -13,30 +13,18 @@ export default function PreviewScreen() {
     );
   }
 
-  async function handleAnalyze() {
+  async function goAnalyze(promptKey: keyof typeof PROMPTS) {
     try {
       const base64 = await imageToBase64(photoUri);
-
-      const response = await analyzeImage(base64, ANALYSIS_PROMPT);
-
-      const text =
-        response?.candidates?.[0]?.content?.parts?.[0]?.text;
-
-      if (!text) throw new Error("Empty Gemini response");
-
-      // ✅ CLEAN JSON ONLY (important fix)
-      const cleaned = text
-        .replace(/```json/g, "")
-        .replace(/```/g, "")
-        .trim();
+      const prompt = PROMPTS[promptKey];
 
       router.push({
         pathname: "/result",
         params: {
-          result: cleaned, // ✅ THIS IS THE ONLY THING RESULT NEEDS
+          base64Image: base64,
+          promptKey,
         },
       });
-
     } catch (err) {
       console.log("Analyze error:", err);
     }
@@ -46,13 +34,18 @@ export default function PreviewScreen() {
     <View style={styles.container}>
       <Image source={{ uri: photoUri }} style={styles.preview} />
 
-      <View style={styles.row}>
-        <TouchableOpacity style={styles.retake} onPress={() => router.back()}>
-          <Text style={styles.text}>Retake</Text>
+      {/* 3 PERSONAS */}
+      <View style={styles.personaRow}>
+        <TouchableOpacity onPress={() => goAnalyze("academic")} style={styles.btn}>
+          <Text style={styles.text}>Academic</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.analyze} onPress={handleAnalyze}>
-          <Text style={styles.text}>Analyze</Text>
+        <TouchableOpacity onPress={() => goAnalyze("safety")} style={styles.btn}>
+          <Text style={styles.text}>Safety</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={() => goAnalyze("inventory")} style={styles.btn}>
+          <Text style={styles.text}>Inventory</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -63,26 +56,17 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#000" },
   preview: { flex: 1, resizeMode: "contain" },
 
-  row: {
+  personaRow: {
     flexDirection: "row",
     justifyContent: "space-around",
-    padding: 20,
+    padding: 15,
   },
 
-  retake: {
-    backgroundColor: "#666",
-    padding: 14,
-    borderRadius: 8,
-  },
-
-  analyze: {
+  btn: {
     backgroundColor: "#2E5BBA",
-    padding: 14,
+    padding: 12,
     borderRadius: 8,
   },
 
-  text: {
-    color: "#fff",
-    fontWeight: "bold",
-  },
+  text: { color: "#fff", fontWeight: "bold" },
 });
