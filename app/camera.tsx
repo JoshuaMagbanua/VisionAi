@@ -1,13 +1,11 @@
 import { CameraView, useCameraPermissions } from "expo-camera";
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import { router } from "expo-router";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 export default function CameraScreen() {
   const [permission, requestPermission] = useCameraPermissions();
-
-  const cameraRef = useRef<CameraView | null>(null);
-  const [photo, setPhoto] = useState<string | null>(null);
+  const cameraRef = useRef<CameraView>(null);
 
   if (!permission) {
     return <View style={styles.container} />;
@@ -33,13 +31,14 @@ export default function CameraScreen() {
   }
 
   async function takePicture() {
-    if (!cameraRef.current) return;
+    const camera = cameraRef.current;
+    if (!camera) return;
 
-    const result = await cameraRef.current.takePictureAsync({
+    const result = await camera.takePictureAsync({
       quality: 0.7,
     });
 
-    setPhoto(result.uri);
+    if (!result?.uri) return;
 
     router.push({
       pathname: "/preview",
@@ -51,32 +50,18 @@ export default function CameraScreen() {
 
   return (
     <View style={styles.container}>
-      <CameraView
-        ref={cameraRef}
-        style={styles.camera}
-        facing="back"
-      />
+      <CameraView ref={cameraRef} style={styles.camera} facing="back" />
 
-      <TouchableOpacity
-        style={styles.captureButton}
-        onPress={takePicture}
-      >
-        <Text style={styles.captureButtonText}>
-          Capture
-        </Text>
+      <TouchableOpacity style={styles.captureButton} onPress={takePicture}>
+        <Text style={styles.captureButtonText}>Capture</Text>
       </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-
-  camera: {
-    flex: 1,
-  },
+  container: { flex: 1 },
+  camera: { flex: 1 },
 
   captureButton: {
     position: "absolute",
@@ -89,7 +74,7 @@ const styles = StyleSheet.create({
   },
 
   captureButtonText: {
-    color: "#FFFFFF",
+    color: "#fff",
     fontWeight: "bold",
     fontSize: 16,
   },
@@ -104,7 +89,6 @@ const styles = StyleSheet.create({
   permissionText: {
     textAlign: "center",
     marginBottom: 16,
-    fontSize: 16,
   },
 
   permissionButton: {
@@ -114,7 +98,7 @@ const styles = StyleSheet.create({
   },
 
   permissionButtonText: {
-    color: "#FFFFFF",
+    color: "#fff",
     fontWeight: "bold",
   },
 });
