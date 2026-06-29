@@ -22,12 +22,21 @@ export default function PreviewScreen() {
       const text =
         response?.candidates?.[0]?.content?.parts?.[0]?.text;
 
+      if (!text) throw new Error("Empty Gemini response");
+
+      // ✅ CLEAN JSON ONLY (important fix)
+      const cleaned = text
+        .replace(/```json/g, "")
+        .replace(/```/g, "")
+        .trim();
+
       router.push({
         pathname: "/result",
         params: {
-          result: text, // IMPORTANT
+          result: cleaned, // ✅ THIS IS THE ONLY THING RESULT NEEDS
         },
       });
+
     } catch (err) {
       console.log("Analyze error:", err);
     }

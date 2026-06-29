@@ -5,40 +5,27 @@ import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 export default function CameraScreen() {
   const [permission, requestPermission] = useCameraPermissions();
-  const cameraRef = useRef<CameraView>(null);
+  const cameraRef = useRef<CameraView | null>(null);
 
-  if (!permission) {
-    return <View style={styles.container} />;
-  }
+  if (!permission) return <View style={styles.container} />;
 
   if (!permission.granted) {
     return (
       <View style={styles.permissionContainer}>
-        <Text style={styles.permissionText}>
-          We need your permission to use the camera
-        </Text>
-
-        <TouchableOpacity
-          style={styles.permissionButton}
-          onPress={requestPermission}
-        >
-          <Text style={styles.permissionButtonText}>
-            Grant Permission
-          </Text>
+        <Text>We need camera permission</Text>
+        <TouchableOpacity onPress={requestPermission}>
+          <Text>Grant Permission</Text>
         </TouchableOpacity>
       </View>
     );
   }
 
   async function takePicture() {
-    const camera = cameraRef.current;
-    if (!camera) return;
+    if (!cameraRef.current) return;
 
-    const result = await camera.takePictureAsync({
+    const result = await cameraRef.current.takePictureAsync({
       quality: 0.7,
     });
-
-    if (!result?.uri) return;
 
     router.push({
       pathname: "/preview",
@@ -68,36 +55,18 @@ const styles = StyleSheet.create({
     bottom: 40,
     alignSelf: "center",
     backgroundColor: "#2E5BBA",
-    paddingVertical: 14,
-    paddingHorizontal: 36,
+    padding: 14,
     borderRadius: 30,
   },
 
+permissionContainer: {
+  flex: 1,
+  justifyContent: "center",
+  alignItems: "center",
+  padding: 20,
+},
+
   captureButtonText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 16,
-  },
-
-  permissionContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 20,
-  },
-
-  permissionText: {
-    textAlign: "center",
-    marginBottom: 16,
-  },
-
-  permissionButton: {
-    backgroundColor: "#2E5BBA",
-    padding: 12,
-    borderRadius: 8,
-  },
-
-  permissionButtonText: {
     color: "#fff",
     fontWeight: "bold",
   },
